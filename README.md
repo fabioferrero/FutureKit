@@ -20,11 +20,11 @@ FutureKit can be used in either a Swift command line tool, or in an app for iOS,
 To install FutureKit, simply add a new dependency to your `Package.swift` file. For more information, please see the [Swift Package Manager documentation](https://github.com/apple/swift-package-manager/tree/master/Documentation).
 
 ```swift
-.package(url: "https://github.com/JohnSundell/Files", from: "0.1.0")
+.package(url: "https://github.com/fabioferrero/FutureKit", from: "0.1.0")
 ```
 
 ## Any questions or feedback?
 
-Please feel free to [open an issue](https://github.com/JohnSundell/Files/issues/new), or contact me [via email](mailto:fabio.ferrero@icloud.com).
+Please feel free to [open an issue](https://github.com/fabioferrero/FutureKit/issues/new), or contact me [via email](mailto:fabio.ferrero@icloud.com).
 
 FF 👨🏻‍💻
