@@ -1,15 +1,39 @@
+
 import XCTest
+import Foundation
 @testable import FutureKit
 
 final class FutureKitTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(FutureKit().text, "Hello, World!")
+    
+    func testFutureSuccess() {
+        
+        let promise = Promise<String>()
+        let future = promise as Future<String>
+        
+        promise.resolve(with: "Hello, World!")
+        
+        future.onSuccess { string in
+            XCTAssertEqual(string, "Hello, World!")
+        }
+    }
+    
+    func testFutureFailure() {
+        
+        struct Error: Swift.Error, LocalizedError {
+            var errorDescription: String? { "Error, World!" }
+        }
+        let promise = Promise<String>()
+        let future = promise as Future<String>
+        
+        promise.reject(with: Error())
+        
+        future.onFailure { error in
+            XCTAssertEqual(error.localizedDescription, "Error, World!")
+        }
     }
 
     static var allTests = [
-        ("testExample", testExample),
+        ("testFutureSuccess", testFutureSuccess),
+        ("testFutureFailure", testFutureFailure)
     ]
 }
