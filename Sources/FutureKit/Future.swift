@@ -8,17 +8,18 @@
 
 import Foundation
 
+/// An object that represent an asynchronous operation that will return a value of type `Value` in the future.
 public class Future<Value> {
     fileprivate var result: Result<Value, Swift.Error>? {
         // Observe result assignment and report it
         didSet { result.map(report) }
     }
     
-    private typealias Callback = (Result<Value, Swift.Error>) -> Void
+    private typealias ResultCallback = (Result<Value, Swift.Error>) -> Void
     private typealias SuccessCallback = (Value) -> Void
     private typealias FailureCallback = (Swift.Error) -> Void
     
-    private lazy var callbacks = [(Queue, Callback)]()
+    private lazy var callbacks = [(Queue, ResultCallback)]()
     private lazy var onSuccessCallbacks = [(Queue, SuccessCallback)]()
     private lazy var onFailureCallbacks = [(Queue, FailureCallback)]()
     
@@ -29,10 +30,7 @@ public class Future<Value> {
         
         // If a result has already been set, call the callback directly
         result.map { result in
-            switch queue {
-            case .main: DispatchQueue.main.async { callback(result) }
-            case .background: callback(result)
-            }
+            handle(callback: callback, with: result, on: queue)
         }
     }
     
@@ -44,10 +42,7 @@ public class Future<Value> {
         // only if the result is a success
         result.map { result in
             if case Result.success(let value) = result {
-                switch queue {
-                case .main: DispatchQueue.main.async { callback(value) }
-                case .background: callback(value)
-                }
+                handle(callback: callback, with: value, on: queue)
             }
         }
         return self
@@ -61,37 +56,39 @@ public class Future<Value> {
         // only if the result is a failure
         result.map { result in
             if case Result.failure(let error) = result {
-                switch queue {
-                case .main: DispatchQueue.main.async { callback(error) }
-                case .background: callback(error)
-                }
+                handle(callback: callback, with: error, on: queue)
             }
         }
         return self
     }
     
     private func report(result: Result<Value, Swift.Error>) {
-        for (queue, callback) in callbacks {
-            switch queue {
-            case .main: DispatchQueue.main.async { callback(result) }
-            case .background: callback(result)
-            }
+        // Call all observed callbacks
+        callbacks.forEach { (queue, callback) in
+            handle(callback: callback, with: result, on: queue)
         }
+        
+        // Call all onSuccess callbacks
         if case Result.success(let value) = result {
             onSuccessCallbacks.forEach { queue, callback in
-                switch queue {
-                case .main: DispatchQueue.main.async { callback(value) }
-                case .background: callback(value)
-                }
+                handle(callback: callback, with: value, on: queue)
             }
         }
+        
+        // Call all onFailure callbacks
         if case Result.failure(let error) = result {
             onFailureCallbacks.forEach { queue, callback in
-                switch queue {
-                case .main: DispatchQueue.main.async { callback(error) }
-                case .background: callback(error)
-                }
+                handle(callback: callback, with: error, on: queue)
             }
+        }
+    }
+    
+    private typealias Callback<T> = (T) -> Void
+    
+    private func handle<T>(callback: @escaping Callback<T>, with value: T, on queue: Queue) {
+        switch queue {
+        case .main: DispatchQueue.main.async { callback(value) }
+        case .background: callback(value)
         }
     }
 }
